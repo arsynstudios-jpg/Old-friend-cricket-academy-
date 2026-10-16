@@ -35,6 +35,42 @@ export function SiteNav({ settings, onRegister }: { settings: AcademySettings; o
   );
 }
 
+type CrestPoint = { x: number; y: number; radius: number; color: string; seed: number };
+
+function buildCrestPoints(scale: number, centerX: number, centerY: number) {
+  const points: CrestPoint[] = [];
+  const addRing = (radius: number, count: number, color: string, offset = 0) => {
+    for (let i = 0; i < count; i += 1) {
+      const angle = (i / count) * Math.PI * 2 + offset;
+      points.push({ x: centerX + Math.cos(angle) * radius * scale, y: centerY + Math.sin(angle) * radius * scale, radius: 1.1 + (i % 3) * 0.45, color, seed: i * 0.31 });
+    }
+  };
+  addRing(188, 210, "#D7A93E");
+  addRing(174, 160, "#2D703F", 0.015);
+  addRing(108, 112, "#F4D88B");
+
+  // A compact particle batsman, bat, ball and stumps inside the badge.
+  const addStroke = (x1: number, y1: number, x2: number, y2: number, count: number, color: string) => {
+    for (let i = 0; i < count; i += 1) {
+      const t = i / Math.max(1, count - 1);
+      points.push({ x: centerX + (x1 + (x2 - x1) * t) * scale, y: centerY + (y1 + (y2 - y1) * t) * scale, radius: 1.2 + (i % 2) * 0.5, color, seed: i * 0.18 });
+    }
+  };
+  addStroke(-51, 67, -51, -8, 24, "#214C2F");
+  addStroke(-39, 67, -39, -14, 23, "#214C2F");
+  addStroke(-63, 67, -27, 67, 17, "#214C2F");
+  addStroke(-31, 42, 7, 61, 28, "#214C2F");
+  addStroke(-4, 51, 36, 62, 25, "#214C2F");
+  addStroke(-9, -8, 30, -49, 31, "#214C2F");
+  addStroke(24, -55, 53, -78, 22, "#214C2F");
+  addStroke(-16, -23, 17, 17, 26, "#214C2F");
+  addStroke(-18, -42, 12, -51, 20, "#214C2F");
+  addRing(14, 22, "#214C2F", 0.2);
+  addRing(91, 38, "#D7A93E", Math.PI * 0.16);
+  points.push({ x: centerX + 74 * scale, y: centerY - 104 * scale, radius: 3.2, color: "#F4D88B", seed: 0.4 });
+  return points;
+}
+
 export function ParticleField({ settings }: { settings: AcademySettings }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
@@ -51,8 +87,8 @@ export function ParticleField({ settings }: { settings: AcademySettings }) {
     };
     resize();
     window.addEventListener("resize", resize);
-    const count = Math.round((window.innerWidth < 700 ? 28 : 70) * settings.particleDensity);
-    const particles = Array.from({ length: Math.max(18, count) }, (_, index) => ({
+    const ambientCount = Math.round((window.innerWidth < 700 ? 28 : 70) * settings.particleDensity);
+    const ambient = Array.from({ length: Math.max(18, ambientCount) }, (_, index) => ({
       x: Math.random() * canvas.clientWidth,
       y: Math.random() * canvas.clientHeight,
       r: 0.6 + Math.random() * 1.8,
@@ -61,15 +97,21 @@ export function ParticleField({ settings }: { settings: AcademySettings }) {
       phase: index * 0.7 + Math.random() * 4,
       alpha: 0.22 + Math.random() * 0.5,
     }));
+    const isMobile = window.innerWidth < 700;
+    const crestScale = Math.min(canvas.clientWidth, canvas.clientHeight) / (isMobile ? 360 : 480);
+    const crest = buildCrestPoints(crestScale, canvas.clientWidth * 0.76, canvas.clientHeight * (isMobile ? 0.72 : 0.46));
+    const origins = crest.map(point => ({ x: Math.random() * canvas.clientWidth, y: Math.random() * canvas.clientHeight }));
+    const startedAt = performance.now();
     let frame = 0;
     let running = true;
+    const smooth = (value: number) => value * value * (3 - 2 * value);
     const draw = (time: number) => {
       if (!running) return;
       const width = canvas.clientWidth;
       const height = canvas.clientHeight;
       ctx.clearRect(0, 0, width, height);
       const tint = settings.particleTint || "#F4D88B";
-      particles.forEach(particle => {
+      ambient.forEach(particle => {
         const wave = Math.sin(time * 0.0004 + particle.phase) * 9 * settings.animationIntensity;
         particle.x += particle.speed * settings.animationIntensity;
         particle.y += particle.drift;
@@ -81,10 +123,26 @@ export function ParticleField({ settings }: { settings: AcademySettings }) {
         ctx.arc(particle.x, particle.y + wave, particle.r, 0, Math.PI * 2);
         ctx.fill();
       });
+
+      const crestCycle = reduced ? 0.46 : ((time - startedAt) % 7800) / 7800;
+      const assemble = smooth(Math.min(1, crestCycle / 0.2));
+      const dissolve = crestCycle < 0.67 ? 0 : smooth((crestCycle - 0.67) / 0.33);
+      crest.forEach((point, index) => {
+        const origin = origins[index];
+        const scatterX = Math.sin(point.seed * 9.7) * width * 0.12 * dissolve;
+        const scatterY = Math.cos(point.seed * 6.3) * height * 0.17 * dissolve;
+        const x = origin.x + (point.x + scatterX - origin.x) * assemble;
+        const y = origin.y + (point.y + scatterY - origin.y) * assemble;
+        const alpha = (0.5 + Math.sin(point.seed * 4) * 0.12) * (1 - dissolve * 0.9) * (0.7 + settings.animationIntensity * 0.3);
+        ctx.beginPath();
+        ctx.fillStyle = `${point.color}${Math.max(0, Math.round(alpha * 255)).toString(16).padStart(2, "0")}`;
+        ctx.arc(x, y, point.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
       if (!reduced) {
         ctx.lineWidth = 1;
         ctx.strokeStyle = `${tint}22`;
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 3; i += 1) {
           ctx.beginPath();
           ctx.bezierCurveTo(width * 0.05, height * (0.25 + i * 0.22), width * 0.42, height * (0.02 + i * 0.3), width * 0.93, height * (0.22 + i * 0.2));
           ctx.stroke();
