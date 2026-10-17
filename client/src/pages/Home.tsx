@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUpRight, Check, MapPin, MessageCircle, Phone, Play, Quo
 import { trpc } from "@/lib/trpc";
 import { DEFAULT_SETTINGS, type AcademySettings } from "@shared/academy";
 import { formatINR, greetingMessage, whatsappUrl } from "@/lib/academy";
-import { AcademyLogo, BrandMark, CookieConsent, FeatureIcon, ParticleField, RegistrationModal, SectionLabel, SiteNav } from "@/components/academy";
+import { AcademyLogo, BrandMark, CookieConsent, FeatureIcon, RegistrationModal, SectionLabel, SiteNav } from "@/components/academy";
 
 function Pill({ children }: { children: React.ReactNode }) { return <span className="pill"><span className="pill-dot" />{children}</span>; }
 
@@ -18,8 +18,6 @@ export default function Home() {
       <SiteNav settings={settings} onRegister={() => setRegistrationOpen(true)} />
       <main>
         <section className="hero-section">
-          <ParticleField settings={settings} />
-          <div className="hero-noise" aria-hidden="true" />
           <div className="hero-content page-shell">
             <div className="hero-copy">
               <Pill>{settings.summerMode ? "Summer training atmosphere" : "Bishan Khedi · Bhopal"}</Pill>

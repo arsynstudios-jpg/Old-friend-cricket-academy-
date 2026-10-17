@@ -31,11 +31,6 @@ export type AcademySettings = {
   summerAnnouncement: string;
   defaultTheme: ThemeMode;
   accentColor: string;
-  particleTint: string;
-  particleDensity: number;
-  animationIntensity: number;
-  windSpeed: number;
-  particleBackground: boolean;
   requireContact: boolean;
   showAddressField: boolean;
   showMessageField: boolean;
@@ -71,11 +66,6 @@ export const DEFAULT_SETTINGS: AcademySettings = {
     "Summer mode is on: a brighter training atmosphere for players building their next innings.",
   defaultTheme: "light",
   accentColor: "#E5B84B",
-  particleTint: "#F4D88B",
-  particleDensity: 0.72,
-  animationIntensity: 0.7,
-  windSpeed: 0.45,
-  particleBackground: true,
   requireContact: false,
   showAddressField: true,
   showMessageField: true,
@@ -126,9 +116,6 @@ export function sanitizeSettings(value: Partial<AcademySettings> | null | undefi
     monthlyFee: Math.max(0, Math.round(Number(merged.monthlyFee) || DEFAULT_SETTINGS.monthlyFee)),
     minAge: Math.min(21, Math.max(1, Math.round(Number(merged.minAge) || DEFAULT_SETTINGS.minAge))),
     maxAge: Math.min(99, Math.max(1, Math.round(Number(merged.maxAge) || DEFAULT_SETTINGS.maxAge))),
-    particleDensity: Math.min(1, Math.max(0.15, Number(merged.particleDensity) || DEFAULT_SETTINGS.particleDensity)),
-    animationIntensity: Math.min(1, Math.max(0, Number(merged.animationIntensity) || DEFAULT_SETTINGS.animationIntensity)),
-    windSpeed: Math.min(1, Math.max(0.1, Number(merged.windSpeed) || DEFAULT_SETTINGS.windSpeed)),
     featureCards: cards.map((card, index) => ({
       id: String(card.id || `card-${index}`),
       eyebrow: String(card.eyebrow || `${String(index + 1).padStart(2, "0")} / Practice`),
