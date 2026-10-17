@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUpRight, Check, MapPin, MessageCircle, Phone, Play, Quo
 import { trpc } from "@/lib/trpc";
 import { DEFAULT_SETTINGS, type AcademySettings } from "@shared/academy";
 import { formatINR, greetingMessage, whatsappUrl } from "@/lib/academy";
-import { BrandMark, CookieConsent, CricketIllustration, FeatureIcon, ParticleField, RegistrationModal, SectionLabel, SiteNav } from "@/components/academy";
+import { AcademyLogo, BrandMark, CookieConsent, FeatureIcon, ParticleField, RegistrationModal, SectionLabel, SiteNav } from "@/components/academy";
 
 function Pill({ children }: { children: React.ReactNode }) { return <span className="pill"><span className="pill-dot" />{children}</span>; }
 
@@ -28,7 +28,7 @@ export default function Home() {
               <div className="hero-actions"><button className="button button-gold" onClick={() => setRegistrationOpen(true)}>Register Now <ArrowUpRight size={17} /></button><a className="button button-ghost" href={contactUrl} target="_blank" rel="noopener noreferrer"><MessageCircle size={17} /> Chat on WhatsApp</a></div>
               <div className="hero-meta"><span><Check size={15} /> Girls & boys</span><span><Check size={15} /> Ages {settings.minAge}–{settings.maxAge}</span><span><Check size={15} /> Weekly practice</span></div>
             </div>
-            <div className="hero-art-wrap"><div className="hero-art-ring" /><div className="art-caption"><span className="caption-line" /><span>Play with purpose</span></div><div className="hero-art-circle"><CricketIllustration /></div><div className="art-stamp"><span>OFCA</span><span>BHOPAL / INDIA</span></div></div>
+            <div className="hero-art-wrap"><div className="hero-art-ring" /><div className="art-caption"><span className="caption-line" /><span>Play with purpose</span></div><div className="hero-art-circle"><AcademyLogo /></div><div className="art-stamp"><span>OFCA</span><span>BHOPAL / INDIA</span></div></div>
           </div>
           <a className="scroll-cue" href="#about"><span>Scroll to explore</span><ArrowDown size={16} /></a>
         </section>

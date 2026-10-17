@@ -37,37 +37,30 @@ export function SiteNav({ settings, onRegister }: { settings: AcademySettings; o
 
 type CrestPoint = { x: number; y: number; radius: number; color: string; seed: number };
 
-function buildCrestPoints(scale: number, centerX: number, centerY: number) {
+function buildLogoPoints(image: HTMLImageElement, size: number, centerX: number, centerY: number, density: number) {
+  const sample = document.createElement("canvas");
+  sample.width = size;
+  sample.height = size;
+  const sampleContext = sample.getContext("2d");
+  if (!sampleContext) return [];
+  sampleContext.drawImage(image, 0, 0, size, size);
+  const pixels = sampleContext.getImageData(0, 0, size, size).data;
   const points: CrestPoint[] = [];
-  const addRing = (radius: number, count: number, color: string, offset = 0) => {
-    for (let i = 0; i < count; i += 1) {
-      const angle = (i / count) * Math.PI * 2 + offset;
-      points.push({ x: centerX + Math.cos(angle) * radius * scale, y: centerY + Math.sin(angle) * radius * scale, radius: 1.1 + (i % 3) * 0.45, color, seed: i * 0.31 });
+  const stride = size > 300 ? 5 : 6;
+  for (let y = 0; y < size; y += stride) {
+    for (let x = 0; x < size; x += stride) {
+      const dx = x - size / 2;
+      const dy = y - size / 2;
+      if (Math.hypot(dx, dy) > size * 0.49) continue;
+      const pixel = (y * size + x) * 4;
+      const r = pixels[pixel];
+      const g = pixels[pixel + 1];
+      const b = pixels[pixel + 2];
+      if (r + g + b > 742 && Math.abs(r - g) < 14 && Math.abs(g - b) < 14) continue;
+      if (points.length % Math.max(1, Math.round(1 / density)) !== 0) continue;
+      points.push({ x: centerX - size / 2 + x, y: centerY - size / 2 + y, radius: 0.85 + ((x + y) % 3) * 0.35, color: `rgb(${r},${g},${b})`, seed: points.length * 0.17 });
     }
-  };
-  addRing(188, 210, "#D7A93E");
-  addRing(174, 160, "#2D703F", 0.015);
-  addRing(108, 112, "#F4D88B");
-
-  // A compact particle batsman, bat, ball and stumps inside the badge.
-  const addStroke = (x1: number, y1: number, x2: number, y2: number, count: number, color: string) => {
-    for (let i = 0; i < count; i += 1) {
-      const t = i / Math.max(1, count - 1);
-      points.push({ x: centerX + (x1 + (x2 - x1) * t) * scale, y: centerY + (y1 + (y2 - y1) * t) * scale, radius: 1.2 + (i % 2) * 0.5, color, seed: i * 0.18 });
-    }
-  };
-  addStroke(-51, 67, -51, -8, 24, "#214C2F");
-  addStroke(-39, 67, -39, -14, 23, "#214C2F");
-  addStroke(-63, 67, -27, 67, 17, "#214C2F");
-  addStroke(-31, 42, 7, 61, 28, "#214C2F");
-  addStroke(-4, 51, 36, 62, 25, "#214C2F");
-  addStroke(-9, -8, 30, -49, 31, "#214C2F");
-  addStroke(24, -55, 53, -78, 22, "#214C2F");
-  addStroke(-16, -23, 17, 17, 26, "#214C2F");
-  addStroke(-18, -42, 12, -51, 20, "#214C2F");
-  addRing(14, 22, "#214C2F", 0.2);
-  addRing(91, 38, "#D7A93E", Math.PI * 0.16);
-  points.push({ x: centerX + 74 * scale, y: centerY - 104 * scale, radius: 3.2, color: "#F4D88B", seed: 0.4 });
+  }
   return points;
 }
 
@@ -98,9 +91,16 @@ export function ParticleField({ settings }: { settings: AcademySettings }) {
       alpha: 0.22 + Math.random() * 0.5,
     }));
     const isMobile = window.innerWidth < 700;
-    const crestScale = Math.min(canvas.clientWidth, canvas.clientHeight) / (isMobile ? 360 : 480);
-    const crest = buildCrestPoints(crestScale, canvas.clientWidth * 0.76, canvas.clientHeight * (isMobile ? 0.72 : 0.46));
-    const origins = crest.map(point => ({ x: Math.random() * canvas.clientWidth, y: Math.random() * canvas.clientHeight }));
+    const logoSize = Math.round(Math.min(canvas.clientWidth, canvas.clientHeight) * (isMobile ? 0.62 : 0.55));
+    let crest: CrestPoint[] = [];
+    let origins: Array<{ x: number; y: number }> = [];
+    const seedLogo = (image: HTMLImageElement) => {
+      crest = buildLogoPoints(image, logoSize, canvas.clientWidth * 0.76, canvas.clientHeight * (isMobile ? 0.72 : 0.46), settings.particleDensity);
+      origins = crest.map(() => ({ x: Math.random() * canvas.clientWidth, y: Math.random() * canvas.clientHeight }));
+    };
+    const logoImage = new Image();
+    logoImage.onload = () => seedLogo(logoImage);
+    logoImage.src = "/academy-logo.jpg";
     const startedAt = performance.now();
     let frame = 0;
     let running = true;
@@ -135,10 +135,12 @@ export function ParticleField({ settings }: { settings: AcademySettings }) {
         const y = origin.y + (point.y + scatterY - origin.y) * assemble;
         const alpha = (0.5 + Math.sin(point.seed * 4) * 0.12) * (1 - dissolve * 0.9) * (0.7 + settings.animationIntensity * 0.3);
         ctx.beginPath();
-        ctx.fillStyle = `${point.color}${Math.max(0, Math.round(alpha * 255)).toString(16).padStart(2, "0")}`;
+        ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+        ctx.fillStyle = point.color;
         ctx.arc(x, y, point.radius, 0, Math.PI * 2);
         ctx.fill();
       });
+      ctx.globalAlpha = 1;
       if (!reduced) {
         ctx.lineWidth = 1;
         ctx.strokeStyle = `${tint}22`;
@@ -171,30 +173,8 @@ export function ParticleField({ settings }: { settings: AcademySettings }) {
   return <canvas ref={canvasRef} className="particle-field" aria-hidden="true" />;
 }
 
-export function CricketIllustration() {
-  return (
-    <svg className="cricket-art" viewBox="0 0 560 560" role="img" aria-label="Black and white illustration of a batsman in an active cricket stance">
-      <defs><filter id="artShadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="8" stdDeviation="8" floodOpacity=".15" /></filter></defs>
-      <g fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" opacity=".7">
-        <path d="M82 164c-36 52-42 118-22 174" /><path d="M468 126c50 62 54 146 25 218" /><path d="M76 390c76 55 168 67 253 35" />
-      </g>
-      <g fill="none" stroke="#E5B84B" strokeWidth="4" strokeLinecap="round"><path d="M372 79c34 10 61 27 84 51" /><path d="M393 62c21 5 43 15 63 30" /></g>
-      <circle cx="405" cy="89" r="11" fill="#111" />
-      <g filter="url(#artShadow)" fill="none" stroke="currentColor" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M194 393l-42 82" /><path d="M250 393l55 84" /><path d="M143 479l-38 19" /><path d="M304 478l47 14" />
-        <path d="M193 224c-27 42-29 101 2 160l54 13c25-55 26-105 4-155" />
-        <path d="M194 226l-31-23 18-31 54 16 23 37" /><path d="M176 198l-25 48" />
-        <path d="M219 246l-21 54" /><path d="M245 260l19 61" />
-        <path d="M198 218c-13 37 1 72 29 80 33 10 54-16 48-50l-6-38-34-22-32 10z" fill="#f8f6ee" />
-        <path d="M202 212l55-9 13 25-74 17-1-33z" fill="currentColor" />
-        <path d="M198 282l-42 38" /><path d="M235 286l55-47" />
-        <path d="M155 318l-34 19 12 32 41-18" /><path d="M288 239l30-30 26 23-38 33" />
-      </g>
-      <g stroke="currentColor" strokeWidth="10" strokeLinecap="round"><path d="M321 205l103 182" /><path d="M427 387l27 6" /><path d="M418 377l20-11" /></g>
-      <g fill="currentColor"><path d="M89 350h12v123H89z" /><path d="M111 350h12v123h-12z" /><path d="M133 350h12v123h-12z" /><path d="M84 347h66v9H84z" /><path d="M83 468h68v9H83z" /></g>
-      <g fill="none" stroke="#E5B84B" strokeWidth="4" strokeLinecap="round"><path d="M331 122c42 9 84 32 110 64" /><path d="M352 106c36 8 73 27 99 52" /></g>
-    </svg>
-  );
+export function AcademyLogo() {
+  return <img className="academy-logo-image" src="/academy-logo.jpg" alt="Old Friends OFCT Cricket Academy crest from Bisankhedi" />;
 }
 
 export function SectionLabel({ number, children }: { number: string; children: string }) {

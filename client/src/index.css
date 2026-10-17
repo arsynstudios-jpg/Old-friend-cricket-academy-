@@ -103,7 +103,7 @@ button { border: 0; }
 .hero-art-wrap { height: min(610px, 72vw); min-height: 480px; position: relative; display: grid; place-items: center; }
 .hero-art-circle { width: min(530px, 48vw); aspect-ratio: 1; border-radius: 50%; background: #f8f7f1; color: #111; display: grid; place-items: center; position: relative; z-index: 2; box-shadow: 0 0 0 1px rgba(255,255,255,.35), 0 20px 80px rgba(0,0,0,.22); }
 .hero-art-circle::after { content: ""; position: absolute; inset: 13px; border: 1px solid rgba(20,20,20,.16); border-radius: inherit; }
-.cricket-art { width: 88%; height: 88%; position: relative; z-index: 1; }
+.academy-logo-image { width: 91%; height: 91%; position: relative; z-index: 1; object-fit: cover; border-radius: 50%; display: block; filter: saturate(.96) contrast(1.04); }
 .hero-art-ring { position: absolute; width: min(610px, 55vw); aspect-ratio: 1; border: 1px solid rgba(229,184,75,.3); border-radius: 50%; transform: rotate(-21deg); }
 .hero-art-ring::after { content: ""; position: absolute; top: 19%; right: 1%; width: 13px; height: 13px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 9px rgba(229,184,75,.1); }
 .art-caption { position: absolute; left: 1%; bottom: 16%; display: flex; align-items: center; gap: 9px; z-index: 4; color: rgba(255,255,255,.74); font: 700 10px/1 "Space Grotesk", sans-serif; letter-spacing: .12em; text-transform: uppercase; transform: rotate(-90deg); transform-origin: left center; }
